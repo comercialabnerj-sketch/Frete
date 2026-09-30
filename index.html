@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Mensagem e PDF de Coleta</title>
+    <title>Gestão de Coletas e Carretos</title>
     
-    <!-- Bibliotecas para leitura de PDF e geração do PDF de saída -->
+    <!-- Bibliotecas para leitura de PDF e geração de PDF local -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -17,7 +17,7 @@
             color: #333;
         }
         .container {
-            max-width: 650px;
+            max-width: 700px;
             background: #fff;
             padding: 25px;
             border-radius: 8px;
@@ -56,6 +56,14 @@
             resize: vertical;
             height: 60px;
         }
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 8px;
+            color: #075e54;
+            font-size: 16px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4px;
+        }
         .preview-box {
             background: #e5ddd5;
             padding: 15px;
@@ -63,18 +71,20 @@
             white-space: pre-wrap;
             font-family: monospace;
             font-size: 13px;
-            margin-top: 15px;
+            margin-top: 6px;
             border: 1px solid #d1c7bd;
         }
         .btn-group {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         .btn {
             border: none;
-            padding: 12px 15px;
-            font-size: 15px;
+            padding: 10px 15px;
+            font-size: 14px;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
@@ -82,31 +92,28 @@
             color: white;
             text-align: center;
         }
-        .btn-copy {
-            background-color: #25d366;
-        }
-        .btn-copy:hover {
-            background-color: #1eb857;
-        }
-        .btn-pdf {
-            background-color: #0275d8;
-        }
-        .btn-pdf:hover {
-            background-color: #025aa5;
-        }
-        /* Estilo oculto de impressão para geração do PDF */
-        #pdf-content {
-            display: none;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            color: #000;
+        .btn-cliente { background-color: #128c7e; }
+        .btn-carreto { background-color: #25d366; }
+        .btn-save { background-color: #f0ad4e; }
+        .btn-clear { background-color: #d9534f; }
+        .btn-pdf { background-color: #0275d8; }
+        .btn-semana { background-color: #6f42c1; width: 100%; margin-top: 10px; }
+        .btn:hover { opacity: 0.9; }
+
+        /* Estilo para garantir visibilidade e legibilidade na conversão para PDF */
+        #pdf-render {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            padding: 30px !important;
+            font-family: Arial, sans-serif !important;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🚚 Solicitação de Coleta / Carreto</h2>
+    <h2>🚚 Gestão de Coletas e Carretos</h2>
 
     <!-- Leitor de PDF da Nota Fiscal -->
     <div class="upload-box">
@@ -117,115 +124,239 @@
 
     <!-- Formulário -->
     <div class="form-group">
+        <label for="carreto">Nome do Carreto / Motorista:</label>
+        <input type="text" id="carreto" placeholder="Ex: Edmar Transports" oninput="gerarMensagens()">
+    </div>
+
+    <div class="form-group">
         <label for="nf">Nota Fiscal:</label>
-        <input type="text" id="nf" placeholder="Ex: 043276" oninput="gerarMensagem()">
+        <input type="text" id="nf" placeholder="Ex: 043276" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
         <label for="cliente">Nome do Cliente:</label>
-        <input type="text" id="cliente" placeholder="Ex: Maria José de Sousa Silva" oninput="gerarMensagem()">
+        <input type="text" id="cliente" placeholder="Ex: Maria José de Sousa Silva" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
         <label for="telefone">Telefone:</label>
-        <input type="text" id="telefone" placeholder="Ex: (11) 95959-0039" oninput="gerarMensagem()">
+        <input type="text" id="telefone" placeholder="Ex: (11) 95959-0039" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
         <label for="endereco">Endereço de Entrega:</label>
-        <input type="text" id="endereco" placeholder="Ex: Avenida Paraguacu Paulista, 705" oninput="gerarMensagem()">
+        <input type="text" id="endereco" placeholder="Ex: Avenida Paraguacu Paulista, 705" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
         <label for="bairro">Bairro / Cidade / UF:</label>
-        <input type="text" id="bairro" placeholder="Ex: Jardim Ana Estela - Carapicuíba/SP" oninput="gerarMensagem()">
+        <input type="text" id="bairro" placeholder="Ex: Jardim Ana Estela - Carapicuíba/SP" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
         <label for="cep">CEP:</label>
-        <input type="text" id="cep" placeholder="Ex: 06.364-550" oninput="gerarMensagem()">
+        <input type="text" id="cep" placeholder="Ex: 06.364-550" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
-        <label for="data">Data de Retirada:</label>
-        <input type="text" id="data" placeholder="Ex: 30/09/2026" oninput="gerarMensagem()">
+        <label for="data">Data de Retirada / Entrega:</label>
+        <input type="text" id="data" placeholder="Ex: 30/09/2026" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
         <label for="pagamento">Pagamento do Frete:</label>
-        <input type="text" id="pagamento" placeholder="Ex: Cliente paga no local R$ 700,00" oninput="gerarMensagem()">
+        <input type="text" id="pagamento" placeholder="Ex: Cliente paga no local R$ 700,00" oninput="gerarMensagens()">
     </div>
 
     <div class="form-group">
         <label for="obs">Observações:</label>
-        <textarea id="obs" placeholder="Ex: Retirada Edmar 152 presilhas internas" oninput="gerarMensagem()"></textarea>
+        <textarea id="obs" placeholder="Ex: Retirada Edmar 152 presilhas internas" oninput="gerarMensagens()"></textarea>
     </div>
 
-    <label>Pré-visualização da Mensagem:</label>
-    <div class="preview-box" id="preview"></div>
-
+    <!-- BOTÕES DE AÇÃO DO FORMULÁRIO -->
     <div class="btn-group">
-        <button class="btn btn-copy" onclick="copiarMensagem()">Copiar p/ WhatsApp</button>
+        <button class="btn btn-save" onclick="salvarNaPlanilha()">💾 Guardar na Planilha</button>
+        <button class="btn btn-clear" onclick="limparFormulario()">🗑️ Limpar Campos</button>
+    </div>
+
+    <!-- MENSAGENS E PDF -->
+    <div class="section-title">📱 Mensagem 1: Para o Cliente</div>
+    <div class="preview-box" id="previewCliente"></div>
+    <div class="btn-group">
+        <button class="btn btn-cliente" onclick="copiarTexto('cliente')">Copiar p/ Cliente</button>
+    </div>
+
+    <div class="section-title">🚛 Mensagem 2: Para o Carreto (Completa)</div>
+    <div class="preview-box" id="previewCarreto"></div>
+    <div class="btn-group">
+        <button class="btn btn-carreto" onclick="copiarTexto('carreto')">Copiar p/ Carreto</button>
         <button class="btn btn-pdf" onclick="gerarPDF()">Baixar PDF</button>
     </div>
+
+    <div class="section-title">📊 Relatório Semanal</div>
+    <button class="btn btn-semana" onclick="copiarRelatorioSemanal()">📋 Copiar Entregas da Semana Toda</button>
 </div>
 
-<!-- Template invisível formatado especificamente para a exportação de PDF -->
-<div id="pdf-content">
-    <h2 style="text-align: center; color: #075e54; border-bottom: 2px solid #075e54; padding-bottom: 10px;">Solicitação de Coleta / Carreto</h2>
-    <div id="pdf-body" style="font-size: 14px; line-height: 1.6; margin-top: 20px;"></div>
+<!-- Elemento para renderização limpa do PDF -->
+<div id="pdf-container" style="display: none;">
+    <div id="pdf-render">
+        <h2 style="text-align: center; color: #075e54; border-bottom: 2px solid #075e54; padding-bottom: 10px;">Solicitação de Coleta / Carreto</h2>
+        <div id="pdf-body" style="font-size: 14px; line-height: 1.6; margin-top: 20px;"></div>
+    </div>
 </div>
 
 <script>
-// Configuração do Worker do PDF.js
+// URL DO GOOGLE APPS SCRIPT CONFIGURADA
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiB2HGjI99va6sajy7MBYiRzLyuV7eFUfiFRNyr5_P1bSwesgv3m_WfFNvPLz5qRV8/exec";
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-// Função para gerar o texto formatado para WhatsApp
-function gerarTexto() {
-    const nf = document.getElementById('nf').value.trim();
-    const cliente = document.getElementById('cliente').value.trim();
-    const telefone = document.getElementById('telefone').value.trim();
-    const endereco = document.getElementById('endereco').value.trim();
-    const bairro = document.getElementById('bairro').value.trim();
-    const cep = document.getElementById('cep').value.trim();
-    const data = document.getElementById('data').value.trim();
-    const pagamento = document.getElementById('pagamento').value.trim();
-    const obs = document.getElementById('obs').value.trim();
+function obterDados() {
+    return {
+        carreto: document.getElementById('carreto').value.trim(),
+        nf: document.getElementById('nf').value.trim(),
+        cliente: document.getElementById('cliente').value.trim(),
+        telefone: document.getElementById('telefone').value.trim(),
+        endereco: document.getElementById('endereco').value.trim(),
+        bairro: document.getElementById('bairro').value.trim(),
+        cep: document.getElementById('cep').value.trim(),
+        data: document.getElementById('data').value.trim(),
+        pagamento: document.getElementById('pagamento').value.trim(),
+        obs: document.getElementById('obs').value.trim()
+    };
+}
 
-    let msg = `🚚 *SOLICITAÇÃO DE COLETA / CARRETO*\n\n`;
-
-    if (nf) msg += `📄 *Nota Fiscal:* ${nf}\n`;
-    if (cliente) msg += `👤 *Cliente:* ${cliente}\n`;
-    if (telefone) msg += `📞 *Telefone:* ${telefone}\n`;
-    
-    if (endereco || bairro || cep) {
-        msg += `📍 *Endereço de Entrega:*\n`;
-        if (endereco) msg += `${endereco}\n`;
-        if (bairro) msg += `${bairro}\n`;
-        if (cep) msg += `CEP: ${cep}\n`;
+function gerarTextoCliente() {
+    const d = obterDados();
+    let msg = `Olá${d.cliente ? ' *' + d.cliente + '*' : ''}! 👋\nSua entrega foi agendada com sucesso. Confira os dados:\n\n`;
+    msg += `📦 *STATUS: COLETA AGENDADA*\n\n`;
+    if (d.data) msg += `📅 *Data Agendada:* ${d.data}\n`;
+    if (d.nf) msg += `📄 *Nota Fiscal:* ${d.nf}\n`;
+    if (d.carreto) msg += `🚚 *Carreto:* ${d.carreto}\n`;
+    if (d.endereco || d.bairro || d.cep) {
+        msg += `\n📍 *Endereço de Entrega:*\n`;
+        if (d.endereco) msg += `${d.endereco}\n`;
+        if (d.bairro) msg += `${d.bairro}\n`;
+        if (d.cep) msg += `CEP: ${d.cep}\n`;
     }
-
-    if (data) msg += `\n📅 *Data de Retirada:* ${data}\n`;
-    if (pagamento) msg += `💰 *Pagamento do Frete:* ${pagamento}\n`;
-    if (obs) msg += `\n📝 *Observações:*\n${obs}\n`;
-
+    msg += `\nQualquer dúvida, estamos à disposição!😊`;
     return msg.trim();
 }
 
-function gerarMensagem() {
-    document.getElementById('preview').innerText = gerarTexto();
+function gerarTextoCarreto() {
+    const d = obterDados();
+    let msg = `🚚 *SOLICITAÇÃO DE COLETA / CARRETO*\n\n`;
+    if (d.carreto) msg += `🚛 *Carreto:* ${d.carreto}\n`;
+    if (d.nf) msg += `📄 *Nota Fiscal:* ${d.nf}\n`;
+    if (d.cliente) msg += `👤 *Cliente:* ${d.cliente}\n`;
+    if (d.telefone) msg += `📞 *Telefone:* ${d.telefone}\n`;
+    if (d.endereco || d.bairro || d.cep) {
+        msg += `\n📍 *Endereço de Entrega:*\n`;
+        if (d.endereco) msg += `${d.endereco}\n`;
+        if (d.bairro) msg += `${d.bairro}\n`;
+        if (d.cep) msg += `CEP: ${d.cep}\n`;
+    }
+    if (d.data) msg += `\n📅 *Data de Retirada:* ${d.data}\n`;
+    if (d.pagamento) msg += `💰 *Pagamento do Frete:* ${d.pagamento}\n`;
+    if (d.obs) msg += `\n📝 *Observações:*\n${d.obs}\n`;
+    return msg.trim();
 }
 
-function copiarMensagem() {
-    const texto = gerarTexto();
+function gerarMensagens() {
+    document.getElementById('previewCliente').innerText = gerarTextoCliente();
+    document.getElementById('previewCarreto').innerText = gerarTextoCarreto();
+}
+
+function copiarTexto(tipo) {
+    const texto = tipo === 'cliente' ? gerarTextoCliente() : gerarTextoCarreto();
     navigator.clipboard.writeText(texto).then(() => {
-        alert('Mensagem copiada com sucesso!');
-    }).catch(() => {
-        alert('Erro ao copiar a mensagem.');
+        alert(`Mensagem copiada com sucesso!`);
     });
 }
 
-// Função para ler o arquivo PDF da NF-e e extrair os dados
+function limparFormulario() {
+    document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+    document.getElementById('uploadStatus').innerText = 'Selecione o PDF para preenchimento automático.';
+    document.getElementById('uploadStatus').style.color = '#666';
+    gerarMensagens();
+}
+
+function gerarPDF() {
+    const pdfContainer = document.getElementById('pdf-container');
+    const pdfBody = document.getElementById('pdf-body');
+    
+    pdfBody.innerHTML = gerarTextoCarreto()
+        .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+
+    pdfContainer.style.display = 'block';
+
+    const element = document.getElementById('pdf-render');
+    const nfNum = document.getElementById('nf').value.trim() || 'Coleta';
+
+    const opt = {
+        margin:       10,
+        filename:     `Coleta_NF_${nfNum}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, logging: false, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        pdfContainer.style.display = 'none';
+    });
+}
+
+async function salvarNaPlanilha() {
+    const d = obterDados();
+    if (!d.nf && !d.cliente) {
+        alert("Preencha ao menos o nome do cliente ou número da NF.");
+        return;
+    }
+
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'salvar', dados: d })
+        });
+        alert("Dados salvos na planilha com sucesso!");
+    } catch (e) {
+        alert("Erro ao salvar os dados na planilha.");
+    }
+}
+
+async function copiarRelatorioSemanal() {
+    try {
+        const response = await fetch(SCRIPT_URL);
+        const dados = await response.json();
+
+        if (!dados || dados.length === 0) {
+            alert("Nenhuma entrega registrada na planilha.");
+            return;
+        }
+
+        let relatorio = `📋 *RESUMO DE ENTREGAS DA SEMANA*\n\n`;
+
+        dados.forEach((row, index) => {
+            relatorio += `*#${index + 1} - NF: ${row[1] || 'S/N'}*\n`;
+            if (row[0]) relatorio += `📅 Data: ${row[0]}\n`;
+            if (row[2]) relatorio += `👤 Cliente: ${row[2]}\n`;
+            if (row[4]) relatorio += `📍 Endereço: ${row[4]}, ${row[5]}\n`;
+            if (row[7]) relatorio += `🚚 Carreto: ${row[7]}\n`;
+            if (row[8]) relatorio += `💰 Valor: ${row[8]}\n`;
+            relatorio += `-----------------------------\n`;
+        });
+
+        navigator.clipboard.writeText(relatorio).then(() => {
+            alert("Resumo de entregas da semana copiado para a área de transferência!");
+        });
+    } catch (e) {
+        alert("Erro ao buscar dados da planilha.");
+    }
+}
+
 async function lerPDF(input) {
     const file = input.files[0];
     const status = document.getElementById('uploadStatus');
@@ -242,11 +373,9 @@ async function lerPDF(input) {
     for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(" ");
-        fullText += pageText + " ";
+        fullText += textContent.items.map(item => item.str).join(" ") + " ";
     }
 
-    // Extração por Expressões Regulares ajustadas ao modelo DANFE
     const nfMatch = fullText.match(/N[º°]\s*(\d{6})/i);
     const clienteMatch = fullText.match(/DESTINATÁRIO\/REMETENTE[\s\S]*?NOME\/RAZÃO SOCIAL\s*([A-Za-zÀ-ÿ\s]+?)(?=\s*CNPJ|\s*ENDEREÇO)/i);
     const enderecoMatch = fullText.match(/ENDEREÇO\s*([A-Za-zÀ-ÿ0-9\s,\.-]+?)(?=\s*BAIRRO|\s*MUNICIPIO)/i);
@@ -257,7 +386,6 @@ async function lerPDF(input) {
     const foneMatch = fullText.match(/\(\d{2}\)\s*\d{4,5}-\d{4}/);
     const dataMatch = fullText.match(/DATA\s*EMISSÃO\s*(\d{2}\/\d{2}\/\d{4})/i) || fullText.match(/(\d{2}\/\d{2}\/\d{4})/);
 
-    // Preenchimento automático dos campos
     if (nfMatch) document.getElementById('nf').value = nfMatch[1];
     if (clienteMatch) document.getElementById('cliente').value = clienteMatch[1].trim();
     if (enderecoMatch) document.getElementById('endereco').value = enderecoMatch[1].trim();
@@ -275,34 +403,10 @@ async function lerPDF(input) {
     status.innerText = "Dados extraídos com sucesso!";
     status.style.color = "#25d366";
 
-    gerarMensagem();
+    gerarMensagens();
 }
 
-// Função para Baixar PDF
-function gerarPDF() {
-    const pdfContainer = document.getElementById('pdf-content');
-    const pdfBody = document.getElementById('pdf-body');
-    const textoMensagem = gerarTexto().replace(/\*(.*?)\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-
-    pdfBody.innerHTML = textoMensagem;
-    pdfContainer.style.display = 'block';
-
-    const nfNum = document.getElementById('nf').value.trim() || 'Coleta';
-    const opt = {
-        margin:       15,
-        filename:     `Coleta_NF_${nfNum}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(pdfContainer).save().then(() => {
-        pdfContainer.style.display = 'none';
-    });
-}
-
-// Inicializar pré-visualização vazia
-gerarMensagem();
+gerarMensagens();
 </script>
 
 </body>
