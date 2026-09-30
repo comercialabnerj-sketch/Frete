@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Mensagem e PDF de Coleta</title>
+    
+    <!-- Bibliotecas para leitura de PDF e geração do PDF de saída -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 650px;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: auto;
+        }
+        h2 {
+            margin-top: 0;
+            color: #075e54;
+        }
+        .upload-box {
+            border: 2px dashed #075e54;
+            background-color: #e8f5e9;
+            padding: 15px;
+            text-align: center;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            height: 60px;
+        }
+        .preview-box {
+            background: #e5ddd5;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 15px;
+            border: 1px solid #d1c7bd;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            border: none;
+            padding: 12px 15px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            flex: 1;
+            color: white;
+            text-align: center;
+        }
+        .btn-copy {
+            background-color: #25d366;
+        }
+        .btn-copy:hover {
+            background-color: #1eb857;
+        }
+        .btn-pdf {
+            background-color: #0275d8;
+        }
+        .btn-pdf:hover {
+            background-color: #025aa5;
+        }
+        /* Estilo oculto de impressão para geração do PDF */
+        #pdf-content {
+            display: none;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚚 Solicitação de Coleta / Carreto</h2>
+
+    <!-- Leitor de PDF da Nota Fiscal -->
+    <div class="upload-box">
+        <label for="pdfFile" style="cursor: pointer; color: #075e54;">📄 <strong>Subir PDF da Nota Fiscal (DANFE)</strong></label>
+        <input type="file" id="pdfFile" accept="application/pdf" onchange="lerPDF(this)" style="margin-top: 8px;">
+        <small id="uploadStatus" style="display:block; margin-top:5px; color:#666;">Selecione o PDF para preenchimento automático.</small>
+    </div>
+
+    <!-- Formulário -->
+    <div class="form-group">
+        <label for="nf">Nota Fiscal:</label>
+        <input type="text" id="nf" placeholder="Ex: 043276" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="cliente">Nome do Cliente:</label>
+        <input type="text" id="cliente" placeholder="Ex: Maria José de Sousa Silva" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="telefone">Telefone:</label>
+        <input type="text" id="telefone" placeholder="Ex: (11) 95959-0039" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="endereco">Endereço de Entrega:</label>
+        <input type="text" id="endereco" placeholder="Ex: Avenida Paraguacu Paulista, 705" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="bairro">Bairro / Cidade / UF:</label>
+        <input type="text" id="bairro" placeholder="Ex: Jardim Ana Estela - Carapicuíba/SP" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="cep">CEP:</label>
+        <input type="text" id="cep" placeholder="Ex: 06.364-550" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="data">Data de Retirada:</label>
+        <input type="text" id="data" placeholder="Ex: 30/09/2026" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="pagamento">Pagamento do Frete:</label>
+        <input type="text" id="pagamento" placeholder="Ex: Cliente paga no local R$ 700,00" oninput="gerarMensagem()">
+    </div>
+
+    <div class="form-group">
+        <label for="obs">Observações:</label>
+        <textarea id="obs" placeholder="Ex: Retirada Edmar 152 presilhas internas" oninput="gerarMensagem()"></textarea>
+    </div>
+
+    <label>Pré-visualização da Mensagem:</label>
+    <div class="preview-box" id="preview"></div>
+
+    <div class="btn-group">
+        <button class="btn btn-copy" onclick="copiarMensagem()">Copiar p/ WhatsApp</button>
+        <button class="btn btn-pdf" onclick="gerarPDF()">Baixar PDF</button>
+    </div>
+</div>
+
+<!-- Template invisível formatado especificamente para a exportação de PDF -->
+<div id="pdf-content">
+    <h2 style="text-align: center; color: #075e54; border-bottom: 2px solid #075e54; padding-bottom: 10px;">Solicitação de Coleta / Carreto</h2>
+    <div id="pdf-body" style="font-size: 14px; line-height: 1.6; margin-top: 20px;"></div>
+</div>
+
+<script>
+// Configuração do Worker do PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+// Função para gerar o texto formatado para WhatsApp
+function gerarTexto() {
+    const nf = document.getElementById('nf').value.trim();
+    const cliente = document.getElementById('cliente').value.trim();
+    const telefone = document.getElementById('telefone').value.trim();
+    const endereco = document.getElementById('endereco').value.trim();
+    const bairro = document.getElementById('bairro').value.trim();
+    const cep = document.getElementById('cep').value.trim();
+    const data = document.getElementById('data').value.trim();
+    const pagamento = document.getElementById('pagamento').value.trim();
+    const obs = document.getElementById('obs').value.trim();
+
+    let msg = `🚚 *SOLICITAÇÃO DE COLETA / CARRETO*\n\n`;
+
+    if (nf) msg += `📄 *Nota Fiscal:* ${nf}\n`;
+    if (cliente) msg += `👤 *Cliente:* ${cliente}\n`;
+    if (telefone) msg += `📞 *Telefone:* ${telefone}\n`;
+    
+    if (endereco || bairro || cep) {
+        msg += `📍 *Endereço de Entrega:*\n`;
+        if (endereco) msg += `${endereco}\n`;
+        if (bairro) msg += `${bairro}\n`;
+        if (cep) msg += `CEP: ${cep}\n`;
+    }
+
+    if (data) msg += `\n📅 *Data de Retirada:* ${data}\n`;
+    if (pagamento) msg += `💰 *Pagamento do Frete:* ${pagamento}\n`;
+    if (obs) msg += `\n📝 *Observações:*\n${obs}\n`;
+
+    return msg.trim();
+}
+
+function gerarMensagem() {
+    document.getElementById('preview').innerText = gerarTexto();
+}
+
+function copiarMensagem() {
+    const texto = gerarTexto();
+    navigator.clipboard.writeText(texto).then(() => {
+        alert('Mensagem copiada com sucesso!');
+    }).catch(() => {
+        alert('Erro ao copiar a mensagem.');
+    });
+}
+
+// Função para ler o arquivo PDF da NF-e e extrair os dados
+async function lerPDF(input) {
+    const file = input.files[0];
+    const status = document.getElementById('uploadStatus');
+
+    if (!file) return;
+
+    status.innerText = "Lendo Nota Fiscal...";
+    status.style.color = "#0275d8";
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        fullText += pageText + " ";
+    }
+
+    // Extração por Expressões Regulares ajustadas ao modelo DANFE
+    const nfMatch = fullText.match(/N[º°]\s*(\d{6})/i);
+    const clienteMatch = fullText.match(/DESTINATÁRIO\/REMETENTE[\s\S]*?NOME\/RAZÃO SOCIAL\s*([A-Za-zÀ-ÿ\s]+?)(?=\s*CNPJ|\s*ENDEREÇO)/i);
+    const enderecoMatch = fullText.match(/ENDEREÇO\s*([A-Za-zÀ-ÿ0-9\s,\.-]+?)(?=\s*BAIRRO|\s*MUNICIPIO)/i);
+    const bairroMatch = fullText.match(/BAIRRO\s*([A-Za-zÀ-ÿ0-9\s]+?)(?=\s*UF|\s*CEP)/i);
+    const municipioMatch = fullText.match(/MUNICIPIO\s*([A-Za-zÀ-ÿ\s]+?)(?=\s*UF|\s*INSC)/i);
+    const ufMatch = fullText.match(/UF\s*([A-Z]{2})/);
+    const cepMatch = fullText.match(/\d{2}\.\d{3}-\d{3}|\d{8}/);
+    const foneMatch = fullText.match(/\(\d{2}\)\s*\d{4,5}-\d{4}/);
+    const dataMatch = fullText.match(/DATA\s*EMISSÃO\s*(\d{2}\/\d{2}\/\d{4})/i) || fullText.match(/(\d{2}\/\d{2}\/\d{4})/);
+
+    // Preenchimento automático dos campos
+    if (nfMatch) document.getElementById('nf').value = nfMatch[1];
+    if (clienteMatch) document.getElementById('cliente').value = clienteMatch[1].trim();
+    if (enderecoMatch) document.getElementById('endereco').value = enderecoMatch[1].trim();
+    
+    let bairroCompleto = "";
+    if (bairroMatch) bairroCompleto += bairroMatch[1].trim();
+    if (municipioMatch) bairroCompleto += (bairroCompleto ? " - " : "") + municipioMatch[1].trim();
+    if (ufMatch) bairroCompleto += "/" + ufMatch[1].trim();
+    if (bairroCompleto) document.getElementById('bairro').value = bairroCompleto;
+
+    if (cepMatch) document.getElementById('cep').value = cepMatch[0];
+    if (foneMatch) document.getElementById('telefone').value = foneMatch[0];
+    if (dataMatch) document.getElementById('data').value = dataMatch[1];
+
+    status.innerText = "Dados extraídos com sucesso!";
+    status.style.color = "#25d366";
+
+    gerarMensagem();
+}
+
+// Função para Baixar PDF
+function gerarPDF() {
+    const pdfContainer = document.getElementById('pdf-content');
+    const pdfBody = document.getElementById('pdf-body');
+    const textoMensagem = gerarTexto().replace(/\*(.*?)\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+    pdfBody.innerHTML = textoMensagem;
+    pdfContainer.style.display = 'block';
+
+    const nfNum = document.getElementById('nf').value.trim() || 'Coleta';
+    const opt = {
+        margin:       15,
+        filename:     `Coleta_NF_${nfNum}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(pdfContainer).save().then(() => {
+        pdfContainer.style.display = 'none';
+    });
+}
+
+// Inicializar pré-visualização vazia
+gerarMensagem();
+</script>
+
+</body>
+</html>
