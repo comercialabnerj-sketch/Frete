@@ -100,7 +100,7 @@
         .btn-semana { background-color: #6f42c1; width: 100%; margin-top: 10px; }
         .btn:hover { opacity: 0.9; }
 
-        /* Estilo para garantir visibilidade e legibilidade na conversão para PDF */
+        /* Estilo para garantir visibilidade na conversão para PDF */
         #pdf-render {
             background-color: #ffffff !important;
             color: #000000 !important;
@@ -176,7 +176,7 @@
     <!-- BOTÕES DE AÇÃO DO FORMULÁRIO -->
     <div class="btn-group">
         <button class="btn btn-save" onclick="salvarNaPlanilha()">💾 Guardar na Planilha</button>
-        <button class="btn btn-clear" onclick="limparFormulario()">🗑️ Limpar Campos</button>
+        <button class="btn btn-clear" onclick="limparFormulario()">🗑️ Limpar Formulário</button>
     </div>
 
     <!-- MENSAGENS E PDF -->
@@ -197,7 +197,7 @@
     <button class="btn btn-semana" onclick="copiarRelatorioSemanal()">📋 Copiar Entregas da Semana Toda</button>
 </div>
 
-<!-- Elemento para renderização limpa do PDF -->
+<!-- Elemento para renderização do PDF -->
 <div id="pdf-container" style="display: none;">
     <div id="pdf-render">
         <h2 style="text-align: center; color: #075e54; border-bottom: 2px solid #075e54; padding-bottom: 10px;">Solicitação de Coleta / Carreto</h2>
@@ -206,7 +206,7 @@
 </div>
 
 <script>
-// URL DO GOOGLE APPS SCRIPT CONFIGURADA
+// SUA URL DO GOOGLE APPS SCRIPT
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiB2HGjI99va6sajy7MBYiRzLyuV7eFUfiFRNyr5_P1bSwesgv3m_WfFNvPLz5qRV8/exec";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -274,21 +274,25 @@ function copiarTexto(tipo) {
     });
 }
 
+// LIMPAR FORMULÁRIO PARA NOVAS COTAÇÕES
 function limparFormulario() {
     document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+    document.getElementById('pdfFile').value = '';
     document.getElementById('uploadStatus').innerText = 'Selecione o PDF para preenchimento automático.';
     document.getElementById('uploadStatus').style.color = '#666';
     gerarMensagens();
 }
 
+// GERAR PDF CORRIGIDO
 function gerarPDF() {
     const pdfContainer = document.getElementById('pdf-container');
     const pdfBody = document.getElementById('pdf-body');
     
-    pdfBody.innerHTML = gerarTextoCarreto()
+    const textoFormatado = gerarTextoCarreto()
         .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br>');
 
+    pdfBody.innerHTML = textoFormatado;
     pdfContainer.style.display = 'block';
 
     const element = document.getElementById('pdf-render');
@@ -307,6 +311,7 @@ function gerarPDF() {
     });
 }
 
+// SALVAR NA PLANILHA CORRIGIDO
 async function salvarNaPlanilha() {
     const d = obterDados();
     if (!d.nf && !d.cliente) {
@@ -319,7 +324,7 @@ async function salvarNaPlanilha() {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'salvar', dados: d })
+            body: JSON.stringify(d)
         });
         alert("Dados salvos na planilha com sucesso!");
     } catch (e) {
@@ -350,7 +355,7 @@ async function copiarRelatorioSemanal() {
         });
 
         navigator.clipboard.writeText(relatorio).then(() => {
-            alert("Resumo de entregas da semana copiado para a área de transferência!");
+            alert("Resumo de entregas da semana copiado!");
         });
     } catch (e) {
         alert("Erro ao buscar dados da planilha.");
